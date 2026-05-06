@@ -3,45 +3,44 @@
 # * ZouRemote v1.1 - Installer by theking-cs             *
 # ********************************************************
 
-PLUGIN_PATH="/usr/lib/enigma2/python/Plugins/Extensions/ZouRemote"
+DESTINO="/usr/lib/enigma2/python/Plugins/Extensions/ZouRemote"
 
 echo "********************************************************"
 echo "* Instalando ZouRemote v1.1                            *"
 echo "********************************************************"
 
-# 1. Intentar instalar dependencias
-echo "> Verificando dependencias..."
-opkg update
-opkg install psmisc
-# Nota: Si ttyd no está en el feed, el usuario deberá subir el binario manualmente a /usr/bin/
-opkg install ttyd || echo "![AVISO] ttyd no encontrado en feeds. Instalar manualmente."
+# 1. Limpieza
+rm -rf $DESTINO /tmp/ZouRemote.zip /tmp/ZouRemote-main
 
-# 2. Limpieza
-rm -rf $PLUGIN_PATH
-rm -rf /tmp/ZouRemote.zip /tmp/Zou-main
-
-# 3. Descarga
+# 2. Descarga
 echo "> Descargando desde GitHub..."
 wget --no-check-certificate https://github.com/theking-cs/ZouRemote/archive/refs/heads/main.zip -O /tmp/ZouRemote.zip
 
-# 4. Extracción inteligente
+# 3. Extracción
 echo "> Extrayendo archivos..."
 unzip -q /tmp/ZouRemote.zip -d /tmp/
-# Buscamos la carpeta extraída (GitHub le añade '-main')
-FOLDER_TMP=$(ls -d /tmp/ZouRemote-*)
+TMP_DIR=$(ls -d /tmp/ZouRemote-* 2>/dev/null)
 
-# 5. Instalación
-if [ -d "$FOLDER_TMP/ZouRemote" ]; then
-    echo "> Moviendo carpeta del plugin..."
-    cp -r $FOLDER_TMP/ZouRemote /usr/lib/enigma2/python/Plugins/Extensions/
-    chmod -R 755 $PLUGIN_PATH
-    echo "********************************************************"
-    echo "* INSTALACIÓN COMPLETADA - REINICIANDO ENIGMA2       *"
-    echo "********************************************************"
-    killall -9 enigma2
+# 4. Instalación (Detección flexible)
+mkdir -p $DESTINO
+
+if [ -d "$TMP_DIR/ZouRemote" ]; then
+    echo "> Carpeta encontrada. Instalando..."
+    cp -r $TMP_DIR/ZouRemote/* $DESTINO/
 else
-    echo "![ERROR] No se encontró la carpeta 'ZouRemote' dentro del ZIP."
-    echo "Asegúrate de que en GitHub los archivos estén dentro de una carpeta llamada ZouRemote."
+    echo "> Instalando archivos desde raíz del repo..."
+    cp -r $TMP_DIR/* $DESTINO/
+    # Borramos el instalador que se copió por error
+    rm -f $DESTINO/instalar.sh
 fi
 
+# 5. Permisos
+chmod -R 755 $DESTINO
+
+# Limpieza final
 rm -rf /tmp/ZouRemote.zip /tmp/ZouRemote-*
+
+echo "********************************************************"
+echo "* INSTALACIÓN COMPLETADA - REINICIANDO ENIGMA2       *"
+echo "********************************************************"
+killall -9 enigma2
