@@ -1,61 +1,43 @@
 #!/bin/sh
-# =========================================================
-# ZouRemote Installer - Version 1.1
-# =========================================================
+# --- ZouRemote Installer v1.1 (Soporte Online) ---
 
-PLUGIN_NAME="ZouRemote"
-PLUGIN_PATH="/usr/lib/enigma2/python/Plugins/Extensions/$PLUGIN_NAME"
+PLUGIN_PATH="/usr/lib/enigma2/python/Plugins/Extensions/ZouRemote"
+URL_RAW="https://raw.githubusercontent.com/theking-cs/ZouRemote/main"
 
-echo "---------------------------------------------------------"
-echo "Instalando $PLUGIN_NAME v1.1 en su receptor..."
-echo "---------------------------------------------------------"
-
-# 1. Limpieza preventiva
-if [ -d $PLUGIN_PATH ]; then
-    echo "> Detectada instalación previa. Limpiando..."
-    rm -rf $PLUGIN_PATH/*.pyc $PLUGIN_PATH/*.pyo
-fi
-
-# 2. Crear directorios
+echo "> Preparando instalación de ZouRemote..."
 mkdir -p $PLUGIN_PATH
 mkdir -p $PLUGIN_PATH/web
 
-# 3. Copiar archivos del repositorio
-echo "> Copiando nuevos archivos..."
-cp -rp ./* $PLUGIN_PATH/
-
-# 4. Ajuste de permisos (Crucial para el servidor y la consola)
-echo "> Configurando permisos de ejecución..."
-chmod -R 755 $PLUGIN_PATH
-chmod 755 $PLUGIN_PATH/plugin.py
-chmod 755 $PLUGIN_PATH/server.py
-chmod 755 $PLUGIN_PATH/instalar.sh
-
-# 5. Gestión de Dependencias
-echo "> Verificando paquetes necesarios..."
-opkg update
-PACKAGES="ttyd psmisc wget python3-core"
-for pkg in $PACKAGES; do
-    if opkg list-installed | grep -q $pkg; then
-        echo "  [OK] $pkg ya está instalado."
+# Función para descargar si el archivo no existe localmente
+download_file() {
+    if [ ! -f "./$1" ]; then
+        echo "> Descargando $1 desde GitHub..."
+        wget -qO "$PLUGIN_PATH/$1" "$URL_RAW/$1"
     else
-        echo "  [+] Instalando $pkg..."
-        opkg install $pkg
+        echo "> Copiando $1 localmente..."
+        cp -rp "./$1" "$PLUGIN_PATH/$1"
     fi
-done
+}
 
-# 6. Finalización
-echo "---------------------------------------------------------"
-echo " INSTALACIÓN EXITOSA"
-echo "---------------------------------------------------------"
-echo "1. Reinicie Enigma2 (GUI)."
-echo "2. Abra el plugin y pulse BOTÓN VERDE para activar."
-echo "3. En su móvil, mantenga pulsado para PEGAR comandos."
-echo "---------------------------------------------------------"
+# Lista de archivos a instalar
+download_file "plugin.py"
+download_file "server.py"
+download_file "__init__.py"
+download_file "plugin.png"
 
-# Intentar borrar archivos temporales de la carpeta actual si es /tmp
-if [ "$PWD" = "/tmp/$PLUGIN_NAME" ]; then
-    rm -rf /tmp/$PLUGIN_NAME
+# Para la carpeta web, si no existe local, bajamos el index (puedes añadir más)
+if [ ! -d "./web" ]; then
+    echo "> Descargando archivos web..."
+    wget -qO "$PLUGIN_PATH/web/index.html" "$URL_RAW/web/index.html"
+else
+    cp -rp ./web/* $PLUGIN_PATH/web/
 fi
 
-exit 0
+# Permisos y dependencias
+chmod -R 755 $PLUGIN_PATH
+opkg update
+opkg install ttyd psmisc wget
+
+echo "-------------------------------------------------------"
+echo " INSTALACIÓN FINALIZADA. REINICIA TU DECO."
+echo "-------------------------------------------------------"
