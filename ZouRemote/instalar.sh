@@ -1,46 +1,61 @@
 #!/bin/sh
-# ********************************************************
-# * ZouRemote v1.1 - Installer by theking-cs             *
-# ********************************************************
+# =========================================================
+# ZouRemote Installer - Version 1.1
+# =========================================================
 
-DESTINO="/usr/lib/enigma2/python/Plugins/Extensions/ZouRemote"
+PLUGIN_NAME="ZouRemote"
+PLUGIN_PATH="/usr/lib/enigma2/python/Plugins/Extensions/$PLUGIN_NAME"
 
-echo "********************************************************"
-echo "* Instalando ZouRemote v1.1                            *"
-echo "********************************************************"
+echo "---------------------------------------------------------"
+echo "Instalando $PLUGIN_NAME v1.1 en su receptor..."
+echo "---------------------------------------------------------"
 
-# 1. Limpieza
-rm -rf $DESTINO /tmp/ZouRemote.zip /tmp/ZouRemote-main
-
-# 2. Descarga
-echo "> Descargando desde GitHub..."
-wget --no-check-certificate https://github.com/theking-cs/ZouRemote/archive/refs/heads/main.zip -O /tmp/ZouRemote.zip
-
-# 3. Extracción
-echo "> Extrayendo archivos..."
-unzip -q /tmp/ZouRemote.zip -d /tmp/
-TMP_DIR=$(ls -d /tmp/ZouRemote-* 2>/dev/null)
-
-# 4. Instalación (Detección flexible)
-mkdir -p $DESTINO
-
-if [ -d "$TMP_DIR/ZouRemote" ]; then
-    echo "> Carpeta encontrada. Instalando..."
-    cp -r $TMP_DIR/ZouRemote/* $DESTINO/
-else
-    echo "> Instalando archivos desde raíz del repo..."
-    cp -r $TMP_DIR/* $DESTINO/
-    # Borramos el instalador que se copió por error
-    rm -f $DESTINO/instalar.sh
+# 1. Limpieza preventiva
+if [ -d $PLUGIN_PATH ]; then
+    echo "> Detectada instalación previa. Limpiando..."
+    rm -rf $PLUGIN_PATH/*.pyc $PLUGIN_PATH/*.pyo
 fi
 
-# 5. Permisos
-chmod -R 755 $DESTINO
+# 2. Crear directorios
+mkdir -p $PLUGIN_PATH
+mkdir -p $PLUGIN_PATH/web
 
-# Limpieza final
-rm -rf /tmp/ZouRemote.zip /tmp/ZouRemote-*
+# 3. Copiar archivos del repositorio
+echo "> Copiando nuevos archivos..."
+cp -rp ./* $PLUGIN_PATH/
 
-echo "********************************************************"
-echo "* INSTALACIÓN COMPLETADA - REINICIANDO ENIGMA2       *"
-echo "********************************************************"
-killall -9 enigma2
+# 4. Ajuste de permisos (Crucial para el servidor y la consola)
+echo "> Configurando permisos de ejecución..."
+chmod -R 755 $PLUGIN_PATH
+chmod 755 $PLUGIN_PATH/plugin.py
+chmod 755 $PLUGIN_PATH/server.py
+chmod 755 $PLUGIN_PATH/instalar.sh
+
+# 5. Gestión de Dependencias
+echo "> Verificando paquetes necesarios..."
+opkg update
+PACKAGES="ttyd psmisc wget python3-core"
+for pkg in $PACKAGES; do
+    if opkg list-installed | grep -q $pkg; then
+        echo "  [OK] $pkg ya está instalado."
+    else
+        echo "  [+] Instalando $pkg..."
+        opkg install $pkg
+    fi
+done
+
+# 6. Finalización
+echo "---------------------------------------------------------"
+echo " INSTALACIÓN EXITOSA"
+echo "---------------------------------------------------------"
+echo "1. Reinicie Enigma2 (GUI)."
+echo "2. Abra el plugin y pulse BOTÓN VERDE para activar."
+echo "3. En su móvil, mantenga pulsado para PEGAR comandos."
+echo "---------------------------------------------------------"
+
+# Intentar borrar archivos temporales de la carpeta actual si es /tmp
+if [ "$PWD" = "/tmp/$PLUGIN_NAME" ]; then
+    rm -rf /tmp/$PLUGIN_NAME
+fi
+
+exit 0
