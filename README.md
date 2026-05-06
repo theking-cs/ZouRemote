@@ -20,4 +20,4 @@ remote control
 To install **ZouRemote** on your Enigma2 device, run the following command in your terminal:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/theking-cs/ZouRemote/main/instalar.sh | bash
+wget -qO- https://raw.githubusercontent.com/theking-cs/ZouRemote/main/instaler.sh | bash
