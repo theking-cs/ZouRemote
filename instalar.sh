@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # --- CONFIGURACIÓN ---
-REPO_VERSION="1.7.3"
+REPO_VERSION="1.1"
 URL_OFFICIAL="https://github.com/tsl0922/ttyd/releases/download/$REPO_VERSION"
 URL_PLUGIN_RAW="https://raw.githubusercontent.com/TU_USUARIO/ZouRemote/main"
 PLUGIN_PATH="/usr/lib/enigma2/python/Plugins/Extensions/ZouRemote"
