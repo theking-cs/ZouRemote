@@ -1,43 +1,47 @@
 #!/bin/sh
-# --- ZouRemote Installer v1.1 (Soporte Online) ---
+# --- ZouRemote Installer v1.2 (Soporte Online) ---
 
 PLUGIN_PATH="/usr/lib/enigma2/python/Plugins/Extensions/ZouRemote"
-URL_RAW="https://raw.githubusercontent.com/theking-cs/ZouRemote/main"
+URL_RAW="https://raw.githubusercontent.com/theking-cs/ZouRemote/main/ZouRemote"
 
-echo "> Preparando instalación de ZouRemote..."
+echo "********************************************************"
+echo "* Instalando ZouRemote v1.2                            *"
+echo "********************************************************"
+
+# Crear carpetas necesarias
 mkdir -p $PLUGIN_PATH
 mkdir -p $PLUGIN_PATH/web
 
-# Función para descargar si el archivo no existe localmente
-download_file() {
-    if [ ! -f "./$1" ]; then
-        echo "> Descargando $1 desde GitHub..."
-        wget -qO "$PLUGIN_PATH/$1" "$URL_RAW/$1"
-    else
-        echo "> Copiando $1 localmente..."
-        cp -rp "./$1" "$PLUGIN_PATH/$1"
-    fi
+# Función para descargar archivos directamente al destino
+download_plugin_file() {
+    echo "> Descargando $1..."
+    wget -q --no-check-certificate -O "$PLUGIN_PATH/$1" "$URL_RAW/$1"
 }
 
-# Lista de archivos a instalar
-download_file "plugin.py"
-download_file "server.py"
-download_file "__init__.py"
-download_file "plugin.png"
+# 1. Descargar archivos base (Asegúrate de que en GitHub estén dentro de la carpeta ZouRemote)
+download_plugin_file "plugin.py"
+download_plugin_file "server.py"
+download_plugin_file "__init__.py"
+download_plugin_file "plugin.png"
 
-# Para la carpeta web, si no existe local, bajamos el index (puedes añadir más)
-if [ ! -d "./web" ]; then
-    echo "> Descargando archivos web..."
-    wget -qO "$PLUGIN_PATH/web/index.html" "$URL_RAW/web/index.html"
-else
-    cp -rp ./web/* $PLUGIN_PATH/web/
-fi
+# 2. Descargar archivos web
+echo "> Descargando archivos web..."
+wget -q --no-check-certificate -O "$PLUGIN_PATH/web/index.html" "$URL_RAW/web/index.html"
 
-# Permisos y dependencias
+# 3. Permisos
+echo "> Aplicando permisos 755..."
 chmod -R 755 $PLUGIN_PATH
+
+# 4. Limpieza de Python (MUY IMPORTANTE para que coja los cambios)
+rm -f $PLUGIN_PATH/*.pyc
+
+# 5. Intentar instalar dependencias
+echo "> Actualizando repositorios e instalando dependencias..."
 opkg update
-opkg install ttyd psmisc wget
+opkg install ttyd psmisc
 
 echo "-------------------------------------------------------"
-echo " INSTALACIÓN FINALIZADA. REINICIA TU DECO."
+echo " INSTALACIÓN FINALIZADA. REINICIANDO ENIGMA2..."
 echo "-------------------------------------------------------"
+
+killall -9 enigma2
