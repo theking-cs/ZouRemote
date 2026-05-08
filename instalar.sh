@@ -1,72 +1,61 @@
 #!/bin/sh
 
 # --- CONFIGURACIÓN ---
-URL_BASE="https://raw.githubusercontent.com/theking-cs/ZouRemote/main"
+URL_ZOU="https://raw.githubusercontent.com/theking-cs/ZouRemote/main"
+# Usamos el repositorio oficial para los binarios que sí descargan bien
+URL_TTYD="https://github.com/tsl0922/ttyd/releases/download/1.7.3"
 PLUGIN_PATH="/usr/lib/enigma2/python/Plugins/Extensions/ZouRemote"
 
 echo "================================================="
-echo "   INSTALADOR ZOUREMOTE - VERSION 1.1"
+echo "   INSTALADOR ZOUREMOTE - VERSION 1.1 (FIXED)"
 echo "================================================="
 
 # 1. DETECTAR ARQUITECTURA
-# Esto leerá si tu VuSolo4K o cualquier otro deco es ARM o MIPS
 ARCH=$(uname -m)
-echo "> Arquitectura del sistema: $ARCH"
-
 case $ARCH in
     armv7l*) 
         BIN_FILE="ttyd.armhf"
-        echo "> Seleccionado binario para ARM (4K)"
+        echo "> Arquitectura ARM (4K) detectada."
         ;;
     mips*)   
         BIN_FILE="ttyd.mips"
-        echo "> Seleccionado binario para MIPS (HD)"
+        echo "> Arquitectura MIPS (HD) detectada."
         ;;
     *)       
         BIN_FILE="ttyd.armhf"
-        echo "> Arquitectura no reconocida, intentando ARM por defecto"
+        echo "> Arquitectura desconocida, usando ARM por defecto."
         ;;
 esac
 
-# 2. DESCARGA DEL BINARIO (Desde tu carpeta /bin/)
-echo "> Descargando binario desde: $URL_BASE/bin/$BIN_FILE"
+# 2. DESCARGA DEL BINARIO (Desde fuente verificada)
+echo "> Descargando consola ttyd..."
 rm -f /usr/bin/ttyd
+curl -kL "${URL_TTYD}/${BIN_FILE}" -o /usr/bin/ttyd
+chmod 755 /usr/bin/ttyd
 
-# Usamos curl con -k (ignorar SSL) y -L (seguir redirecciones de GitHub)
-curl -kL "$URL_BASE/bin/$BIN_FILE" -o /usr/bin/ttyd
-
-# 3. VERIFICACIÓN DE TAMAÑO (Para evitar los 0 bytes)
-if [ ! -s /usr/bin/ttyd ]; then
-    echo "-------------------------------------------------"
-    echo " ERROR: El archivo ttyd se descargó vacío."
-    echo " REVISA: Que en tu GitHub el archivo esté en /bin/$BIN_FILE"
-    echo "-------------------------------------------------"
+# Verificar si se bajó bien
+SIZE=$(ls -s /usr/bin/ttyd | awk '{print $1}')
+if [ "$SIZE" -lt 100 ]; then
+    echo "!!! ERROR: Fallo al descargar el binario de la consola."
     exit 1
 fi
+echo "> Consola instalada correctamente ($SIZE KB)."
 
-chmod 755 /usr/bin/ttyd
-echo "> Consola instalada con éxito."
-
-# 4. INSTALACIÓN DE ARCHIVOS DEL PLUGIN
-echo "> Descargando scripts del servidor y archivos web..."
+# 3. INSTALACIÓN DE ARCHIVOS DEL PLUGIN (Desde tu GitHub)
+echo "> Instalando componentes de ZouRemote..."
 mkdir -p $PLUGIN_PATH/web
 
-# Descarga de archivos raíz del plugin
-curl -kL "$URL_BASE/server.py" -o "$PLUGIN_PATH/server.py"
-curl -kL "$URL_BASE/plugin.py" -o "$PLUGIN_PATH/plugin.py"
+curl -kLs "${URL_ZOU}/server.py" -o "$PLUGIN_PATH/server.py"
+curl -kLs "${URL_ZOU}/plugin.py" -o "$PLUGIN_PATH/plugin.py"
+curl -kLs "${URL_ZOU}/web/index.html" -o "$PLUGIN_PATH/web/index.html"
+curl -kLs "${URL_ZOU}/web/remote.js" -o "$PLUGIN_PATH/web/remote.js"
 
-# Descarga de archivos dentro de /web/
-curl -kL "$URL_BASE/web/index.html" -o "$PLUGIN_PATH/web/index.html"
-curl -kL "$URL_BASE/web/remote.js" -o "$PLUGIN_PATH/web/remote.js"
-
-# Permisos para el servidor Python
 chmod 755 "$PLUGIN_PATH/server.py"
 
 echo "================================================="
-echo "   INSTALACIÓN COMPLETADA - REINICIANDO GUI"
+echo "   INSTALACIÓN COMPLETA - REINICIANDO GUI"
 echo "================================================="
 
-# Sincronizar cambios y reiniciar la interfaz Enigma2
 sync
 sleep 2
 killall -9 enigma2
