@@ -35,3 +35,6 @@ If the automatic download fails or you prefer to set it up manually, connect to 
 
 permissions chmod +x /usr/bin/ttyd
 
+
+For install
+wget -qO- https://raw.githubusercontent.com/theking-cs/ZouRemote/main/instalar.sh | bash
